@@ -8,11 +8,14 @@ import folium
 # 1. CONFIGURATION & PATHS
 # -----------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CSV_DIR = os.path.join(BASE_DIR, "csv")
+
+# Point relative to the repository _data directory
+DATA_DIR = os.path.join(BASE_DIR, "_data")
+
 DATASETS = [
-    (os.path.join(CSV_DIR, "FY25 CNMI Fixed Sites.csv"), "2025", 0),
-    (os.path.join(CSV_DIR, "FY26 AS PRIA Fixed Sites.csv"), "2026", 1),
-    (os.path.join(CSV_DIR, "FY27 NCRMP HA Fixed Sites.csv"), "2024", 0),
+    (os.path.join(DATA_DIR, "FY25 CNMI Fixed Sites.csv"), "2025", 0),
+    (os.path.join(DATA_DIR, "FY26 AS PRIA Fixed Sites.csv"), "2026", 1),
+    (os.path.join(DATA_DIR, "FY27 NCRMP HA Fixed Sites.csv"), "2024", 0),
 ]
 
 REGION_BY_LOCATION_CODE = {
@@ -33,30 +36,22 @@ PHOTO_CATEGORIES = {
     "Site Photos": "Site_Photos",
     "STR Photos": "STR_Photos",
 }
+
+# Base Google Cloud Storage HTTPS URL prefix
+GCS_BASE_URL = "https://storage.googleapis.com/nmfs_odp_pifsc/PIFSC/ESD/ARP/Fixed_Sites_Projects/occ_map_maker"
+
 PHOTO_COLLECTIONS = {
     "2024": {
-        "index_path": r"C:\~\HARAMP2024_fixed_site_str_photos.csv",
-        "root_path": r"Z:\OCC_Map_Maker\HARAMP2024_FIXED_photos",
-        "routes": {
-            "Site Photos": "/haramp2024_site_photos",
-            "STR Photos": "/haramp2024_str_photos",
-        },
+        "index_path": os.path.join(DATA_DIR, "HARAMP2024_fixed_site_str_photos.csv"),
+        "gcs_folder": f"{GCS_BASE_URL}/HARAMP2024_FIXED_photos",
     },
     "2025": {
-        "index_path": r"C:\~\CNMI.RAMP2025_fixed_site_str_photos.csv",
-        "root_path": r"Z:\OCC_Map_Maker\CNMI_RAMP_2025_FIXED_photos",
-        "routes": {
-            "Site Photos": "/cnmi2025_site_photos",
-            "STR Photos": "/cnmi2025_str_photos",
-        },
+        "index_path": os.path.join(DATA_DIR, "CNMI.RAMP2025_fixed_site_str_photos.csv"),
+        "gcs_folder": f"{GCS_BASE_URL}/CNMI_RAMP_2025_FIXED_photos",
     },
     "2026": {
-        "index_path": r"C:\~\PRIA.ASRAMP2026_fixed_site_str_photos.csv",
-        "root_path": r"Z:\OCC_Map_Maker\PRIA_ASRAMP2026_FIXED_photos",
-        "routes": {
-            "Site Photos": "/pria2026_site_photos",
-            "STR Photos": "/pria2026_str_photos",
-        },
+        "index_path": os.path.join(DATA_DIR, "PRIA.ASRAMP2026_fixed_site_str_photos.csv"),
+        "gcs_folder": f"{GCS_BASE_URL}/PRIA_ASRAMP2026_FIXED_photos",
     },
 }
 
@@ -103,9 +98,13 @@ def get_photos(category, site_id, year):
         (matching_photos["site_id"] == site_id)
         & (matching_photos["category"] == category)
     ]
-    route = collection["routes"][category]
+    
+    category_folder = PHOTO_CATEGORIES[category]
+    gcs_folder = collection["gcs_folder"]
+    
     for filename in matching_photos["photo_name"]:
-        photos.append({"name": filename, "url": f"{route}/{site_id}/{filename}"})
+        photo_url = f"{gcs_folder}/{category_folder}/{site_id}/{filename}"
+        photos.append({"name": filename, "url": photo_url})
     return photos
 
 
@@ -134,13 +133,9 @@ region_choices.update(
     }
 )
 
-# Mount static web routes in Shiny
 app_assets = {
-    route: os.path.join(collection["root_path"], PHOTO_CATEGORIES[category])
-    for collection in PHOTO_COLLECTIONS.values()
-    for category, route in collection["routes"].items()
+    "/assets": ASSETS_DIR
 }
-app_assets["/assets"] = ASSETS_DIR
 
 # -----------------------------------------------------------------------------
 # 3. STYLING & LIGHTBOX SCRIPTS
@@ -312,7 +307,6 @@ document.addEventListener('keydown', function(e) {
 </script>
 """
 
-# Header Banner Layout (Title on left, Logos on far right)
 header_title_layout = ui.div(
     ui.span("National Coral Reef Monitoring Program (NCRMP)", style="font-size: 28px; font-weight: 600;"),
     ui.div(
