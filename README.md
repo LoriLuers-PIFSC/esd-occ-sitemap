@@ -1,5 +1,5 @@
 # PIFSC ESD ARP OCC Sitemap
-- Developed by Zach Taylor as  a resource to view OCC sites quickly for planning purposes and make use of existing site photo data.
+- Developed as a resource to view OCC sites quickly for planning purposes and make use of existing site photo data.
 
 ## Overview
 - **Input:**
