@@ -23,8 +23,8 @@
 ## Installing
 1. Clone the repository:
    ```bash
-   git clone https://github.com/ZachTaylor-CIMAR/Interactive_Site_Photo_Map.git
-   cd Interactive_Site_Photo_Map
+   git clone https://github.com/LoriLuers-PIFSC/esd-occ-sitemap.git
+   cd esd-occ-sitemap
    ```
 
 2. Install required dependencies:
