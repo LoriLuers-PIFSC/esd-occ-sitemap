@@ -1,17 +1,35 @@
 # PIFSC ESD ARP OCC Sitemap
 - Developed as a resource to view OCC sites quickly for planning purposes and make use of existing site photo data.
 
-## Overview
-- **Input:**
-  - **Site Metadata CSVs:** `FY25 CNMI Fixed Sites.csv`, `FY26 AS PRIA Fixed Sites.csv`, `FY27 NCRMP HA Fixed Sites.csv` containing coordinates (`LATITUDE`/`LONGITUDE`), site IDs (`OCC_SITEID`), locations, and depth (`DEPTH_M`).
-  - **Photo Index CSVs:** `HARAMP2024_fixed_site_str_photos.csv`, `CNMI.RAMP2025_fixed_site_str_photos.csv`, `PRIA.ASRAMP2026_fixed_site_str_photos.csv` linking site IDs to photo filenames and categories (`Site Photos`, `STR Photos`).
-  - **Photo Image Assets:** Local network directories housing actual site and STR image files (`Z:\OCC_Map_Maker\...`) and UI logos (`noaa_logo.png`, `cimar_logo.jpg`).
-  - **UI Controls:** Interactive web selections for Region (`region_filter`), Fiscal Year (`year_filter`), Zoom to Site ID (`site_select`), and Photo Category (`category_filter`).
+* **Multi-Attribute Filtering:**
+  * **Filter by Region:** Narrow down site markers by geographic region (e.g., CNMI, American Samoa / PRIA, Main Hawaiian Islands).
+  * **Filter by Fiscal Year:** View sites corresponding to specific project cycles (`FY25`, `FY26`, `FY27`).
+  * **Filter by Photo Category:** Toggle between **Site Photos** (broad substrate/site overviews) and **STR Photos** (Subsurface Temperature Recorder equipment photos).
+* **Direct Site Navigation & Zoom:**
+  * **Zoom to Site ID:** Select any specific `OCC_SITEID` from a searchable dropdown menu to immediately center and zoom the map directly to that site's coordinates.
+* **Interactive Map Markers:**
+  * **Custom Dive Flag Icons:** Sites are displayed using custom dive flag markers.
+  * **International Date Line Handling:** Custom longitude wrapping logic ensures seamless marker rendering across negative/positive longitudes near the IDL.
+* **Site Metadata Popups:**
+  * Click any dive flag marker to open a detailed popup displaying `Site ID`, `Location Name`, `Depth (m)`, `Fiscal Year`, and thumbnail previews of associated photos.
+* **Full-Screen Lightbox Photo Gallery:**
+  * Clicking any photo thumbnail opens an interactive lightbox modal overlay.
+  * **High-Resolution Inspection:** View full-sized images directly within the browser interface.
+  * **Keyboard & Touch Navigation:** Cycle through site photos using keyboard arrow keys (`LeftArrow` / `RightArrow`) or close the view with `Escape`. Includes photo counters and metadata headers.
 
+---
 - **Output:**
   - **Interactive Map (`map_out`):** A Folium/Esri World Imagery satellite map rendered in Shiny for Python featuring custom dive flag markers with wrapped longitude coordinates across the International Date Line.
   - **Site Detail Popups:** Interactive map popups presenting site metadata (`Site ID`, `Location`, `Depth`, `Year`) alongside thumbnail galleries.
   - **Full-Screen Lightbox Gallery:** An embedded JavaScript/CSS overlay modal allowing high-resolution photo viewing, image counter titles, modal controls, and keyboard navigation (`ArrowLeft`, `ArrowRight`, `Escape`).
+
+
+## Previewing the Map
+
+Before launching or installing the application, you can explore the user interface and example map views directly within this repository:
+
+* **Screenshots Directory:** Check the [`/screenshots`](./screenshots) folder to preview interface layouts, map marker distributions across regions, metadata popups, and the full-screen lightbox image viewer.
+
 
 ## Prerequisites
 - Python 3.8+
