@@ -1,5 +1,6 @@
 # PIFSC ESD ARP OCC Sitemap
 - Developed as a resource to view OCC sites quickly for planning purposes and make use of existing site photo data.
+![Full Map](screenshots/1.full_map.png)
 
 * **Multi-Attribute Filtering:**
   * **Filter by Region:** Narrow down site markers by geographic region (e.g., CNMI, American Samoa / PRIA, Main Hawaiian Islands).
@@ -22,14 +23,6 @@
   - **Interactive Map (`map_out`):** A Folium/Esri World Imagery satellite map rendered in Shiny for Python featuring custom dive flag markers with wrapped longitude coordinates across the International Date Line.
   - **Site Detail Popups:** Interactive map popups presenting site metadata (`Site ID`, `Location`, `Depth`, `Year`) alongside thumbnail galleries.
   - **Full-Screen Lightbox Gallery:** An embedded JavaScript/CSS overlay modal allowing high-resolution photo viewing, image counter titles, modal controls, and keyboard navigation (`ArrowLeft`, `ArrowRight`, `Escape`).
-
-
-## Previewing the Map
-
-Before launching or installing the application, you can explore the user interface and example map views directly within this repository:
-
-* **Screenshots Directory:** Check the [`/screenshots`](./screenshots) folder to preview interface layouts, map marker distributions across regions, metadata popups, and the full-screen lightbox image viewer.
-
 
 ## Prerequisites
 - Python 3.8+
