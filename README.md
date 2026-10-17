@@ -1,28 +1,45 @@
 # PIFSC ESD ARP OCC Sitemap
-- Developed as a resource to view OCC sites quickly for planning purposes and make use of existing site photo data.
-![Full Map](screenshots/1.full_map.png)
+Developed as a planning resource to quickly view OCC sites and their associated photo data.
 
-* **Multi-Attribute Filtering:**
-  * **Filter by Region:** Narrow down site markers by geographic region (e.g., CNMI, American Samoa / PRIA, Main Hawaiian Islands).
-  * **Filter by Fiscal Year:** View sites corresponding to specific project cycles (`FY25`, `FY26`, `FY27`).
-  * **Filter by Photo Category:** Toggle between **Site Photos** (broad substrate/site overviews) and **STR Photos** (Subsurface Temperature Recorder equipment photos).
-* **Direct Site Navigation & Zoom:**
-  * **Zoom to Site ID:** Select any specific `OCC_SITEID` from a searchable dropdown menu to immediately center and zoom the map directly to that site's coordinates.
-* **Interactive Map Markers:**
-  * **Custom Dive Flag Icons:** Sites are displayed using custom dive flag markers.
-  * **International Date Line Handling:** Custom longitude wrapping logic ensures seamless marker rendering across negative/positive longitudes near the IDL.
-* **Site Metadata Popups:**
-  * Click any dive flag marker to open a detailed popup displaying `Site ID`, `Location Name`, `Depth (m)`, `Fiscal Year`, and thumbnail previews of associated photos.
-* **Full-Screen Lightbox Photo Gallery:**
-  * Clicking any photo thumbnail opens an interactive lightbox modal overlay.
-  * **High-Resolution Inspection:** View full-sized images directly within the browser interface.
-  * **Keyboard & Touch Navigation:** Cycle through site photos using keyboard arrow keys (`LeftArrow` / `RightArrow`) or close the view with `Escape`. Includes photo counters and metadata headers.
+## Features
 
----
-- **Output:**
-  - **Interactive Map (`map_out`):** A Folium/Esri World Imagery satellite map rendered in Shiny for Python featuring custom dive flag markers with wrapped longitude coordinates across the International Date Line.
-  - **Site Detail Popups:** Interactive map popups presenting site metadata (`Site ID`, `Location`, `Depth`, `Year`) alongside thumbnail galleries.
-  - **Full-Screen Lightbox Gallery:** An embedded JavaScript/CSS overlay modal allowing high-resolution photo viewing, image counter titles, modal controls, and keyboard navigation (`ArrowLeft`, `ArrowRight`, `Escape`).
+- Filter site markers by region, year, and photo category.
+- Zoom to a selected site ID.
+- View site metadata and associated Site Photos or STR Photos in map popups.
+- Open photos in a full-screen lightbox; use the left and right arrow keys to navigate and Escape to close it.
+- Handle longitudes across the International Date Line.
+
+Popup photo previews use the original bucket images at a small display size and load lazily. They are not separately resized thumbnail files, so the first load of a preview may take time.
+
+### Screenshots
+
+Full map:
+
+![Full map](screenshots/1.full_map.png)
+
+Filter by region:
+
+![Region filter](<screenshots/2. region_filter.png>)
+
+Filter by year:
+
+![Year filter](<screenshots/3. year_filter.png>)
+
+Filter by site:
+
+![Site filter](<screenshots/4. site_filter.png>)
+
+Select a site:
+
+![Site selection](<screenshots/5. site_selection.png>)
+
+Site details and photo previews:
+
+![Site data display](<screenshots/6. site_data_display.png>)
+
+View a full-resolution photo:
+
+![High-resolution image view](<screenshots/7. high_resolution_image_view.png>)
 
 ## Prerequisites
 - Python 3.8+
@@ -38,23 +55,34 @@
    cd esd-occ-sitemap
    ```
 
-2. Install required dependencies:
+2. Install the required packages:
    ```bash
-   pip install shiny pandas folium
+   pip install -r requirements.txt
    ```
 
-3. Build photo indexes from the public Google Cloud Storage bucket:
+3. Generate the photo indexes from the public Google Cloud Storage bucket:
    ```bash
    python scripts/build_photo_indexes.py
    ```
 
-   This writes the photo manifests used by the app into `_data/`. Run it again
-   when the bucket contents change, and include the generated CSVs when deploying.
+   The script lists image objects under the 2024, 2025, and 2026 photo collections
+   and writes `_data/bucket_photo_index_<year>.csv` files. Each manifest records
+   the site ID, photo category, filename, and actual bucket folder. Folder suffixes
+   such as `(Second time)` are retained for the image URL and removed when matching
+   the folder to the map site ID. The generated manifests are required at app
+   startup; run the script again when bucket contents change.
 
 4. Run the Shiny app:
    ```bash
    shiny run app.py
    ```
+
+## Deployment
+
+When deploying, include `app.py`, `requirements.txt`, the site data CSVs in
+`_data/`, all three generated `bucket_photo_index_<year>.csv` manifests, and the
+logo file under `icons/`. The photo image files remain in Google Cloud Storage;
+they are not downloaded into the deployment bundle.
 
 ## Resources
 - Related metadata for this ESA project is described here: https://www.fisheries.noaa.gov/inport/item/76360
