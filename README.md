@@ -43,7 +43,15 @@
    pip install shiny pandas folium
    ```
 
-3. Run the Shiny app:
+3. Build photo indexes from the public Google Cloud Storage bucket:
+   ```bash
+   python scripts/build_photo_indexes.py
+   ```
+
+   This writes the photo manifests used by the app into `_data/`. Run it again
+   when the bucket contents change, and include the generated CSVs when deploying.
+
+4. Run the Shiny app:
    ```bash
    shiny run app.py
    ```

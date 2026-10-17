@@ -1,5 +1,6 @@
 import os
 import json
+from urllib.parse import quote
 from shiny import App, ui, render, reactive
 import pandas as pd
 import folium
@@ -13,9 +14,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "_data")
 
 DATASETS = [
-    (os.path.join(DATA_DIR, "FY25 CNMI Fixed Sites.csv"), "2025", 0),
-    (os.path.join(DATA_DIR, "FY26 AS PRIA Fixed Sites.csv"), "2026", 1),
-    (os.path.join(DATA_DIR, "FY27 NCRMP HA Fixed Sites.csv"), "2024", 0),
+    (os.path.join(DATA_DIR, "FY25 CNMI Fixed Sites.csv"), "2025"),
+    (os.path.join(DATA_DIR, "FY26 AS PRIA Fixed Sites.csv"), "2026"),
+    (os.path.join(DATA_DIR, "FY27 NCRMP HA Fixed Sites.csv"), "2024"),
 ]
 
 REGION_BY_LOCATION_CODE = {
@@ -42,15 +43,15 @@ GCS_BASE_URL = "https://storage.googleapis.com/nmfs_odp_pifsc/PIFSC/ESD/ARP/Fixe
 
 PHOTO_COLLECTIONS = {
     "2024": {
-        "index_path": os.path.join(DATA_DIR, "HARAMP2024_fixed_site_str_photos.csv"),
+        "index_path": os.path.join(DATA_DIR, "bucket_photo_index_2024.csv"),
         "gcs_folder": f"{GCS_BASE_URL}/HARAMP2024_FIXED_photos",
     },
     "2025": {
-        "index_path": os.path.join(DATA_DIR, "CNMI.RAMP2025_fixed_site_str_photos.csv"),
+        "index_path": os.path.join(DATA_DIR, "bucket_photo_index_2025.csv"),
         "gcs_folder": f"{GCS_BASE_URL}/CNMI_RAMP_2025_FIXED_photos",
     },
     "2026": {
-        "index_path": os.path.join(DATA_DIR, "PRIA.ASRAMP2026_fixed_site_str_photos.csv"),
+        "index_path": os.path.join(DATA_DIR, "bucket_photo_index_2026.csv"),
         "gcs_folder": f"{GCS_BASE_URL}/PRIA_ASRAMP2026_FIXED_photos",
     },
 }
@@ -63,8 +64,8 @@ os.makedirs(ASSETS_DIR, exist_ok=True)
 # -----------------------------------------------------------------------------
 def load_data():
     dataframes = []
-    for csv_path, fiscal_year, skiprows in DATASETS:
-        df = pd.read_csv(csv_path, skiprows=skiprows)
+    for csv_path, fiscal_year in DATASETS:
+        df = pd.read_csv(csv_path)
         if "LATITUDE" not in df.columns:
             df = df.rename(columns={"SITELAT": "LATITUDE", "SITELON": "LONGITUDE"})
         df = df.dropna(subset=["LATITUDE", "LONGITUDE"]).copy()
@@ -82,10 +83,11 @@ def load_photo_indexes():
     for year, collection in PHOTO_COLLECTIONS.items():
         photo_index = pd.read_csv(
             collection["index_path"],
-            usecols=["site_id", "category", "photo_name"],
+            usecols=["site_id", "category", "photo_name", "bucket_folder"],
         )
         photo_index = photo_index.dropna(subset=["site_id", "category", "photo_name"])
         photo_index["site_id"] = photo_index["site_id"].astype(str).str.strip()
+        photo_index["bucket_folder"] = photo_index["bucket_folder"].astype(str).str.strip()
         photo_indexes[year] = photo_index
     return photo_indexes
 
@@ -102,8 +104,13 @@ def get_photos(category, site_id, year):
     category_folder = PHOTO_CATEGORIES[category]
     gcs_folder = collection["gcs_folder"]
     
-    for filename in matching_photos["photo_name"]:
-        photo_url = f"{gcs_folder}/{category_folder}/{site_id}/{filename}"
+    for _, photo in matching_photos.iterrows():
+        filename = str(photo["photo_name"])
+        bucket_folder = quote(str(photo["bucket_folder"]), safe="")
+        encoded_filename = quote(filename, safe="")
+        photo_url = (
+            f"{gcs_folder}/{category_folder}/{bucket_folder}/{encoded_filename}"
+        )
         photos.append({"name": filename, "url": photo_url})
     return photos
 
@@ -134,7 +141,8 @@ region_choices.update(
 )
 
 app_assets = {
-    "/assets": ASSETS_DIR
+    "/assets": ASSETS_DIR,
+    "/icons": os.path.join(BASE_DIR, "icons"),
 }
 
 # -----------------------------------------------------------------------------
@@ -310,8 +318,7 @@ document.addEventListener('keydown', function(e) {
 header_title_layout = ui.div(
     ui.span("National Coral Reef Monitoring Program (NCRMP)", style="font-size: 28px; font-weight: 600;"),
     ui.div(
-        ui.img(src="/assets/noaa_logo.png", height="42px", style="margin-right: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"),
-        ui.img(src="/assets/cimar_logo.jpg", height="42px", style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"),
+        ui.img(src="icons/noaa_cimar_logo.png", height="42px", style="margin-right: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));"),
         style="display: flex; align-items: center;"
     ),
     style="display: flex; justify-content: space-between; align-items: center; width: 100%;"
@@ -495,7 +502,7 @@ def server(input, output, session):
                     for img in site_photos:
                         img_url = img["url"]
                         gallery_json = json.dumps(gallery_items).replace('"', '&quot;')
-                        popup_html += f'<img src="{img_url}" onclick="openPhotoGallery({gallery_json}, {photo_counter})" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
+                        popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="openPhotoGallery({gallery_json}, {photo_counter})" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
                         photo_counter += 1
                     popup_html += "</div>"
                 else:
@@ -509,7 +516,7 @@ def server(input, output, session):
                     for img in str_photos:
                         img_url = img["url"]
                         gallery_json = json.dumps(gallery_items).replace('"', '&quot;')
-                        popup_html += f'<img src="{img_url}" onclick="openPhotoGallery({gallery_json}, {photo_counter})" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
+                        popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="openPhotoGallery({gallery_json}, {photo_counter})" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
                         photo_counter += 1
                     popup_html += "</div>"
                 else:
