@@ -1,5 +1,5 @@
 # PIFSC ESD ARP OCC Sitemap
-Developed by Zach Taylor as a planning resource to quickly view OCC sites and their associated photo data.  QC'd, updated source to Google Cloud Bucket, and published on NMFS Posit Connect by Lori Luers.
+Developed by Zach Taylor as a planning resource to quickly view OCC sites and their associated photo data.  Co-developed by Lori Luers: sanitized, cleaned, updated worfklow to pull from Google Cloud Bucket, made reproducible, and published on NMFS Posit Connect.
 <br>
 Posit Connect Shiny App: https://connect.fisheries.noaa.gov/esd-occ-sitemap/ 
 
