@@ -357,7 +357,7 @@ app_ui = ui.page_sidebar(
                 "SITE": "Site Photos Only",
                 "STR": "STR Photos Only"
             },
-            selected="BOTH"
+            selected="SITE"
         ),
         width=320
     ),

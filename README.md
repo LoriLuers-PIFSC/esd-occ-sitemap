@@ -6,6 +6,7 @@
 ## Features
 
 - Filter site markers by region, year, and photo category.
+- Show Site Photos by default, with STR Photos available as a filter option.
 - Zoom to a selected site ID.
 - View site metadata and associated Site Photos or STR Photos in map popups.
 - Open photos in a full-screen lightbox; use the left and right arrow keys to navigate and Escape to close it.
