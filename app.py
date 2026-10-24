@@ -335,7 +335,7 @@ app_ui = ui.page_sidebar(
             id="region_filter",
             label="Region:",
             choices=region_choices,
-            selected="ALL"
+            selected="Hawaii"
         ),
         ui.input_select(
             id="year_filter",
