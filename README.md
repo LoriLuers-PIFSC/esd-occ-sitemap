@@ -6,7 +6,7 @@
 ## Features
 
 - Filter site markers by region, year, and photo category.
-- Open with all regions selected and the map initially framed around Hawaii.
+- Open with all regions selected and the map framed to show all sites.
 - Show Site Photos by default, with STR Photos available as a filter option.
 - Zoom to a selected site ID.
 - View site metadata and associated Site Photos or STR Photos in map popups.
