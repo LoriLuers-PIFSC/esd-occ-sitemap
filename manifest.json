@@ -3,19 +3,19 @@
   "locale": "English_United States.1252",
   "metadata": {
     "appmode": "python-shiny",
-    "entrypoint": "app.py"
+    "entrypoint": "app"
   },
   "python": {
-    "version": "3.14.4",
+    "version": "3.12.4",
     "package_manager": {
       "name": "pip",
-      "version": "26.2.1",
+      "version": "26.0.1",
       "package_file": "requirements.txt"
     }
   },
   "files": {
     "requirements.txt": {
-      "checksum": "6e1fdac284d86318b0a1a5c94cfe80ed"
+      "checksum": "4e51e34b9d680878d4eb8b01f9a1eb3e"
     },
     ".gitignore": {
       "checksum": "94369e22e2e4d5e2896a5d8edfa97148"
@@ -30,7 +30,7 @@
       "checksum": "8405ac001608eb2f3b40598ee3685a05"
     },
     "README.md": {
-      "checksum": "310934f9cd4d5800a726faa33f1e6cd2"
+      "checksum": "071934f6b9a5ee043fed1c7d657f6e5c"
     },
     "_data/FY25 CNMI Fixed Sites.csv": {
       "checksum": "fbe93208851496a105efee5f078a0b3a"
@@ -50,11 +50,8 @@
     "_data/bucket_photo_index_2026.csv": {
       "checksum": "52ff3a889ba13aa885f192a6f9614784"
     },
-    "_data/general_data_management_archive-prep_SE2602_AMSM_STRS_MISSING_TAR_FOR_SITES.csv": {
-      "checksum": "9fc5c6d300481205f31c3b456b2acda8"
-    },
     "app.py": {
-      "checksum": "28dac097853b6beaa5c657603ca5258f"
+      "checksum": "a3bc65e47e367809c817fc31fac49dbe"
     },
     "icons/noaa_cimar_logo.png": {
       "checksum": "51048c2e9dd00a2b162f3ae01c142c28"
