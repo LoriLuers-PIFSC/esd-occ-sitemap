@@ -1,5 +1,6 @@
 import os
 import json
+import html
 from urllib.parse import quote
 from shiny import App, ui, render, reactive
 import pandas as pd
@@ -90,25 +91,26 @@ def load_photo_indexes():
         photo_index = photo_index.dropna(subset=["site_id", "category", "photo_name"])
         photo_index["site_id"] = photo_index["site_id"].astype(str).str.strip()
         photo_index["bucket_folder"] = photo_index["bucket_folder"].astype(str).str.strip()
-        photo_indexes[year] = photo_index
+        photo_indexes[year] = {
+            key: group[["photo_name", "bucket_folder"]].to_dict("records")
+            for key, group in photo_index.groupby(
+                ["site_id", "category"], sort=False
+            )
+        }
     return photo_indexes
 
 
 def get_photos(category, site_id, year):
     photos = []
     collection = PHOTO_COLLECTIONS[year]
-    matching_photos = photo_indexes[year]
-    matching_photos = matching_photos[
-        (matching_photos["site_id"] == site_id)
-        & (matching_photos["category"] == category)
-    ]
+    matching_photos = photo_indexes[year].get((site_id, category), [])
     
     category_folder = PHOTO_CATEGORIES[category]
     gcs_folder = collection["gcs_folder"]
     
-    for _, photo in matching_photos.iterrows():
+    for photo in matching_photos:
         filename = str(photo["photo_name"])
-        bucket_folder = quote(str(photo["bucket_folder"]), safe="")
+        bucket_folder = quote(photo["bucket_folder"], safe="")
         encoded_filename = quote(filename, safe="")
         photo_url = (
             f"{gcs_folder}/{category_folder}/{bucket_folder}/{encoded_filename}"
@@ -335,7 +337,7 @@ app_ui = ui.page_sidebar(
             id="region_filter",
             label="Region:",
             choices=region_choices,
-            selected="Hawaii"
+            selected="ALL"
         ),
         ui.input_select(
             id="year_filter",
@@ -487,13 +489,16 @@ def server(input, output, session):
                 gallery_items.append({"url": img["url"], "title": f"{site_id} - STR Photo: {img['name']}"})
 
             popup_html = f"""
-            <div style="font-family: Arial, sans-serif; font-size: 13px; width: 320px; color: #333333;">
+            <div class="site-popup" data-gallery="{html.escape(json.dumps(gallery_items), quote=True)}" style="font-family: Arial, sans-serif; font-size: 13px; width: 320px; color: #333333;">
                 <b>Site ID:</b> {site_id}<br>
                 <b>Location:</b> {location}<br>
                 <b>Depth:</b> {depth} m | <b>Year:</b> {site_year}<br>
                 <hr style="margin: 6px 0; border: 0; border-top: 1px solid #ccc;">
             """
 
+            gallery_click = (
+                "openPhotoGallery(JSON.parse(this.closest('.site-popup').dataset.gallery), {})"
+            )
             photo_counter = 0
 
             # Site Photos Section
@@ -503,8 +508,7 @@ def server(input, output, session):
                     popup_html += "<div style='display: flex; flex-wrap: wrap; max-height: 120px; overflow-y: auto; margin-bottom: 8px;'>"
                     for img in site_photos:
                         img_url = img["url"]
-                        gallery_json = json.dumps(gallery_items).replace('"', '&quot;')
-                        popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="openPhotoGallery({gallery_json}, {photo_counter})" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
+                        popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="{gallery_click.format(photo_counter)}" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
                         photo_counter += 1
                     popup_html += "</div>"
                 else:
@@ -517,8 +521,7 @@ def server(input, output, session):
                     popup_html += "<div style='display: flex; flex-wrap: wrap; max-height: 120px; overflow-y: auto;'>"
                     for img in str_photos:
                         img_url = img["url"]
-                        gallery_json = json.dumps(gallery_items).replace('"', '&quot;')
-                        popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="openPhotoGallery({gallery_json}, {photo_counter})" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
+                        popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="{gallery_click.format(photo_counter)}" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
                         photo_counter += 1
                     popup_html += "</div>"
                 else:
