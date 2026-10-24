@@ -33,6 +33,8 @@ REGION_BY_LOCATION_CODE = {
     **dict.fromkeys(["OFU", "ROS", "SWA", "TAU", "TUT"], "American Samoa"),
 }
 
+HAWAII_MAIN_ISLANDS_BOUNDS = [[18.8, -160.4], [22.4, -154.7]]
+
 PHOTO_CATEGORIES = {
     "Site Photos": "Site_Photos",
     "STR Photos": "STR_Photos",
@@ -439,17 +441,17 @@ def server(input, output, session):
             tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             attr='Esri World Imagery'
         )
-        if (
-            selected_site == "-- Select Site ID --"
-            and not map_df.empty
-        ):
-            m.fit_bounds(
-                [
-                    [map_df["LATITUDE"].min(), map_df["MAP_LONGITUDE"].min()],
-                    [map_df["LATITUDE"].max(), map_df["MAP_LONGITUDE"].max()],
-                ],
-                padding=(30, 30),
-            )
+        if selected_site == "-- Select Site ID --":
+            if selected_region == "ALL" and selected_year == "ALL":
+                m.fit_bounds(HAWAII_MAIN_ISLANDS_BOUNDS, padding=(30, 30))
+            elif not map_df.empty:
+                m.fit_bounds(
+                    [
+                        [map_df["LATITUDE"].min(), map_df["MAP_LONGITUDE"].min()],
+                        [map_df["LATITUDE"].max(), map_df["MAP_LONGITUDE"].max()],
+                    ],
+                    padding=(30, 30),
+                )
 
         dive_flag_svg = """
         <svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 32 32'>
