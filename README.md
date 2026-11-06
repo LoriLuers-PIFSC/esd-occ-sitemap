@@ -51,6 +51,7 @@ View a full-resolution photo:
   - `shiny`
   - `pandas`
   - `folium`
+  - `Pillow`
 
 ## Installing
 1. Clone the repository:
@@ -80,6 +81,12 @@ View a full-resolution photo:
    ```bash
    shiny run app.py
    ```
+
+   Sites with an available orthomosaic show an **Open Orthomosaic** link.
+   The link opens a browser-compatible PNG preview in a new tab; the preview
+   is generated on first request and cached locally. The configured
+   `Z:\OCC_Map_Maker` network drive must be available to the machine running
+   the app.
 
 ## Deployment
 

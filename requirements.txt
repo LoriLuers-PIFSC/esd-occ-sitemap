@@ -24,6 +24,7 @@ opentelemetry-api==1.45.1
 orjson==3.13.0
 packaging==26.3
 pandas==3.0.6
+Pillow==12.0.0
 platformdirs==4.13.3
 prompt_toolkit==3.0.53
 pydantic==2.14.1
