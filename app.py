@@ -66,10 +66,14 @@ PHOTO_COLLECTIONS = {
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
-# Local orthomosaic files are served by Shiny when this network drive is
-# available. Set these paths to the corresponding locations on another machine.
+# Base GCS URL for orthomosaics
+GCS_ORTHO_BASE_URL = (
+    "https://storage.googleapis.com/nmfs_odp_pifsc/"
+    "PIFSC/ESD/ARP/Fixed_Sites_Projects/occ_map_maker/HARAMP24/Orthomosaic_DEM"
+)
+
 ORTHOMOSAIC_DIR = r"Z:\OCC_Map_Maker\HARAMP2024_orthomosaics"
-ORTHOMOSAIC_INDEX_PATH = r"Z:\OCC_Map_Maker\site_orthomosaic_index.csv"
+ORTHOMOSAIC_INDEX_PATH = os.path.join(DATA_DIR, "2024_site_orthomosaic_index.csv")
 ORTHOMOSAIC_PREVIEW_DIR = os.path.join(BASE_DIR, ".orthomosaic_previews")
 ORTHOMOSAIC_PREVIEW_SIZE = (2400, 2400)
 
@@ -84,7 +88,7 @@ def load_data():
             df = df.rename(columns={"SITELAT": "LATITUDE", "SITELON": "LONGITUDE"})
         df = df.dropna(subset=["LATITUDE", "LONGITUDE"]).copy()
         df["YEAR"] = fiscal_year
-        df["OCC_SITEID"] = df["OCC_SITEID"].astype(str).str.strip()
+        df["OCC_SITEID"] = df["OCC_SITEID"].astype(str).str.strip().str.upper()
         dataframes.append(df)
     combined_df = pd.concat(dataframes, ignore_index=True)
     location_codes = combined_df["LOCATIONCODE"].fillna("").astype(str).str.strip()
@@ -126,7 +130,7 @@ def load_orthomosaic_index():
     )
     orthomosaics = {}
     for _, row in orthomosaic_index.iterrows():
-        site_id = str(row["OCC_SITEID"]).strip()
+        site_id = str(row["OCC_SITEID"]).strip().upper()
         filename = str(row["ORTHO_FILENAME"]).strip()
         if (
             not site_id
@@ -136,9 +140,7 @@ def load_orthomosaic_index():
         ):
             continue
 
-        file_path = os.path.join(ORTHOMOSAIC_DIR, filename)
-        if os.path.isfile(file_path):
-            orthomosaics[site_id] = filename
+        orthomosaics[site_id] = filename
 
     return orthomosaics
 
@@ -203,13 +205,15 @@ app_assets = {
     "/assets": ASSETS_DIR,
     "/icons": os.path.join(BASE_DIR, "icons"),
 }
-if os.path.isdir(ORTHOMOSAIC_DIR):
-    app_assets["/orthomosaics"] = ORTHOMOSAIC_DIR
 
 
 def create_orthomosaic_preview(site_id):
     filename = orthomosaics_by_site.get(site_id)
     if not filename:
+        return None
+
+    source_path = Path(ORTHOMOSAIC_DIR) / filename
+    if not source_path.is_file():
         return None
 
     preview_dir = Path(ORTHOMOSAIC_PREVIEW_DIR)
@@ -218,7 +222,6 @@ def create_orthomosaic_preview(site_id):
     if preview_path.is_file():
         return preview_path
 
-    source_path = Path(ORTHOMOSAIC_DIR) / filename
     try:
         Image.MAX_IMAGE_PIXELS = None
         with Image.open(source_path) as image:
@@ -585,7 +588,13 @@ def server(input, output, session):
             orthomosaic_filename = orthomosaics_by_site.get(site_id)
             orthomosaic_link = ""
             if orthomosaic_filename:
-                orthomosaic_url = f"/orthomosaic-preview/{quote(site_id, safe='')}"
+                local_orthomosaic_path = Path(ORTHOMOSAIC_DIR) / orthomosaic_filename
+                if local_orthomosaic_path.is_file():
+                    orthomosaic_url = f"/orthomosaic-preview/{quote(site_id, safe='')}"
+                else:
+                    orthomosaic_url = (
+                        f"{GCS_ORTHO_BASE_URL}/{quote(orthomosaic_filename, safe='')}"
+                    )
                 orthomosaic_link = (
                     "<div style='margin: 8px 0;'>"
                     "<a "

@@ -8,7 +8,12 @@ TARGET_REGIONS = ["MHI", "NWHI"]
 TARGET_YEAR = "2024"
 
 DEST_DIR = r"Z:\OCC_Map_Maker\HARAMP2024_orthomosaics"
-INDEX_CSV = r"Z:\OCC_Map_Maker\site_orthomosaic_index.csv"
+NETWORK_INDEX_CSV = r"Z:\OCC_Map_Maker\site_orthomosaic_index.csv"
+REPO_INDEX_CSV = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "_data",
+    "2024_site_orthomosaic_index.csv",
+)
 
 # Matches OCC site ID (e.g., OCC-HAW-002, OCC-FFS-002)
 SITE_ID_PATTERN = re.compile(r"OCC-[A-Z]{3}-\d{3}", re.IGNORECASE)
@@ -73,10 +78,10 @@ for region in TARGET_REGIONS:
 df = pd.DataFrame(records)
 if not df.empty:
     df = df.drop_duplicates(subset=["OCC_SITEID"], keep="last")
-    df.to_csv(INDEX_CSV, index=False)
-    df.to_csv("site_orthomosaic_index.csv", index=False)
+    df.to_csv(NETWORK_INDEX_CSV, index=False)
+    df.to_csv(REPO_INDEX_CSV, index=False)
     print(f"\nCompleted! {len(df)} orthomosaics centralized and index saved to:")
-    print(f" - {INDEX_CSV}")
-    print(f" - site_orthomosaic_index.csv (local repo)")
+    print(f" - {NETWORK_INDEX_CSV}")
+    print(f" - {REPO_INDEX_CSV}")
 else:
     print(f"\nNo orthomosaic files found matching {TARGET_YEAR} criteria in MHI or NWHI.")
