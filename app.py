@@ -145,17 +145,6 @@ def load_orthomosaic_index():
     return orthomosaics
 
 
-def has_value(row, column_names):
-    normalized_columns = {
-        str(column).strip().casefold(): column for column in row.index
-    }
-    for column_name in column_names:
-        column = normalized_columns.get(column_name.casefold())
-        if column is not None and pd.notna(row[column]) and str(row[column]).strip():
-            return True
-    return False
-
-
 def get_photos(category, site_id, year):
     photos = []
     collection = PHOTO_COLLECTIONS[year]
@@ -535,14 +524,6 @@ def server(input, output, session):
             tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
             attr='Esri World Imagery'
         )
-        folium.TileLayer(
-            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-            attr='Esri World Boundaries and Places',
-            name='Island and Place Labels',
-            overlay=True,
-            control=False,
-            show=True,
-        ).add_to(m)
         if selected_site == "-- Select Site ID --" and not map_df.empty:
             m.fit_bounds(
                 [
@@ -607,14 +588,10 @@ def server(input, output, session):
                 )
 
             popup_html = f"""
-            <div class="site-popup" data-gallery="{html.escape(json.dumps(gallery_items), quote=True)}" style="font-family: Arial, sans-serif; font-size: 13px; width: 500px; color: #333333;">
+            <div class="site-popup" data-gallery="{html.escape(json.dumps(gallery_items), quote=True)}" style="font-family: Arial, sans-serif; font-size: 13px; width: 320px; color: #333333;">
                 <b>Site ID:</b> {site_id}<br>
                 <b>Location:</b> {location}<br>
                 <b>Depth:</b> {depth} m | <b>Year:</b> {site_year}<br>
-                <b>CB:</b> {"Yes" if has_value(row, ["CARB BUDGETS", "Carb Budgets"]) else "No"}<br>
-                <b>STR:</b> {"Yes" if has_value(row, ["# STRs Deploy", "STR Deploy", "# STRs to deploy"]) else "No"}<br>
-                <b>CAU:</b> {"Yes" if has_value(row, ["# CAUs Deploy", "CAU Deploy"]) else "No"}<br>
-                <b>BMU:</b> {"Yes" if has_value(row, ["# BMUs Deploy", "BMU Deploy"]) else "No"}<br>
                 <hr style="margin: 6px 0; border: 0; border-top: 1px solid #ccc;">
                 {orthomosaic_link}
             """
@@ -628,7 +605,7 @@ def server(input, output, session):
             if selected_cat in ['BOTH', 'SITE']:
                 popup_html += f"<b>Site Photos ({len(site_photos)}):</b><br>"
                 if site_photos:
-                    popup_html += "<div style='display: flex; flex-wrap: wrap; max-height: 300px; overflow-y: auto; margin-bottom: 8px;'>"
+                    popup_html += "<div style='display: flex; flex-wrap: wrap; max-height: 120px; overflow-y: auto; margin-bottom: 8px;'>"
                     for img in site_photos:
                         img_url = img["url"]
                         popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="{gallery_click.format(photo_counter)}" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
@@ -641,7 +618,7 @@ def server(input, output, session):
             if selected_cat in ['BOTH', 'STR']:
                 popup_html += f"<b>STR Photos ({len(str_photos)}):</b><br>"
                 if str_photos:
-                    popup_html += "<div style='display: flex; flex-wrap: wrap; max-height: 300px; overflow-y: auto;'>"
+                    popup_html += "<div style='display: flex; flex-wrap: wrap; max-height: 120px; overflow-y: auto;'>"
                     for img in str_photos:
                         img_url = img["url"]
                         popup_html += f'<img src="{img_url}" loading="lazy" decoding="async" onclick="{gallery_click.format(photo_counter)}" style="width:75px; height:55px; object-fit:cover; margin:2px; border-radius:3px; cursor:pointer;" title="Click to view full screen">'
@@ -662,7 +639,7 @@ def server(input, output, session):
 
             marker = folium.Marker(
                 location=[lat, lon],
-                popup=folium.Popup(popup_html, max_width=560, show=should_open),
+                popup=folium.Popup(popup_html, max_width=350, show=should_open),
                 tooltip=f"{site_id} ({site_year})",
                 icon=icon
             )

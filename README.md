@@ -9,7 +9,7 @@
 - Open with all regions selected and the map framed to show all sites.
 - Show Site Photos by default, with STR Photos available as a filter option.
 - Zoom to a selected site ID.
-- View site metadata and associated Site Photos or STR Photos in map popups.
+- View the site ID, location, depth, year, and available orthomosaic link alongside Site Photos or STR Photos in compact map popups.
 - Open photos in a full-screen lightbox; use the left and right arrow keys to navigate and Escape to close it.
 - Handle longitudes across the International Date Line.
 
@@ -83,10 +83,7 @@ View a full-resolution photo:
    ```
 
    Sites with an available orthomosaic show an **Open Orthomosaic** link.
-   When the configured `Z:\OCC_Map_Maker\HARAMP2024_orthomosaics` directory
-   is available, the link opens a browser-compatible PNG preview generated
-   on first request and cached locally. Otherwise, it links to the orthomosaic
-   in Google Cloud Storage.
+   Links to the orthomosaic in Google Cloud Storage.
 
 ## Deployment
 
