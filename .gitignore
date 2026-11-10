@@ -3,6 +3,7 @@ venv
 .venv/
 __pycache__/
 *.py[cod]
+.orthomosaic_previews/
 .pytest_cache/
 .DS_Store
 Thumbs.db

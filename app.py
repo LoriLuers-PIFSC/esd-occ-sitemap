@@ -1,10 +1,16 @@
 import os
 import json
 import html
+import logging
+from pathlib import Path
 from urllib.parse import quote
 from shiny import App, ui, render, reactive
 import pandas as pd
 import folium
+from PIL import Image
+from starlette.requests import Request
+from starlette.responses import FileResponse, PlainTextResponse
+from starlette.routing import Route
 
 # -----------------------------------------------------------------------------
 # 1. CONFIGURATION & PATHS
@@ -60,6 +66,17 @@ PHOTO_COLLECTIONS = {
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 os.makedirs(ASSETS_DIR, exist_ok=True)
 
+# Base GCS URL for orthomosaics
+GCS_ORTHO_BASE_URL = (
+    "https://storage.googleapis.com/nmfs_odp_pifsc/"
+    "PIFSC/ESD/ARP/Fixed_Sites_Projects/occ_map_maker/HARAMP24/Orthomosaic_DEM"
+)
+
+ORTHOMOSAIC_DIR = r"Z:\OCC_Map_Maker\HARAMP2024_orthomosaics"
+ORTHOMOSAIC_INDEX_PATH = os.path.join(DATA_DIR, "2024_site_orthomosaic_index.csv")
+ORTHOMOSAIC_PREVIEW_DIR = os.path.join(BASE_DIR, ".orthomosaic_previews")
+ORTHOMOSAIC_PREVIEW_SIZE = (2400, 2400)
+
 # -----------------------------------------------------------------------------
 # 2. HELPER FUNCTIONS & DATA LOADING
 # -----------------------------------------------------------------------------
@@ -71,7 +88,7 @@ def load_data():
             df = df.rename(columns={"SITELAT": "LATITUDE", "SITELON": "LONGITUDE"})
         df = df.dropna(subset=["LATITUDE", "LONGITUDE"]).copy()
         df["YEAR"] = fiscal_year
-        df["OCC_SITEID"] = df["OCC_SITEID"].astype(str).str.strip()
+        df["OCC_SITEID"] = df["OCC_SITEID"].astype(str).str.strip().str.upper()
         dataframes.append(df)
     combined_df = pd.concat(dataframes, ignore_index=True)
     location_codes = combined_df["LOCATIONCODE"].fillna("").astype(str).str.strip()
@@ -96,6 +113,36 @@ def load_photo_indexes():
             )
         }
     return photo_indexes
+
+
+def load_orthomosaic_index():
+    if not os.path.isfile(ORTHOMOSAIC_INDEX_PATH):
+        logging.warning(
+            "Orthomosaic index not found; orthomosaic links will be unavailable: %s",
+            ORTHOMOSAIC_INDEX_PATH,
+        )
+        return {}
+
+    required_columns = ["OCC_SITEID", "ORTHO_FILENAME"]
+    orthomosaic_index = pd.read_csv(
+        ORTHOMOSAIC_INDEX_PATH,
+        usecols=required_columns,
+    )
+    orthomosaics = {}
+    for _, row in orthomosaic_index.iterrows():
+        site_id = str(row["OCC_SITEID"]).strip().upper()
+        filename = str(row["ORTHO_FILENAME"]).strip()
+        if (
+            not site_id
+            or not filename
+            or filename in {"nan", "None"}
+            or os.path.basename(filename) != filename
+        ):
+            continue
+
+        orthomosaics[site_id] = filename
+
+    return orthomosaics
 
 
 def has_value(row, column_names):
@@ -143,6 +190,7 @@ def wrap_longitudes(longitudes):
 
 df = load_data()
 photo_indexes = load_photo_indexes()
+orthomosaics_by_site = load_orthomosaic_index()
 unique_years = ["ALL"] + sorted(df['YEAR'].unique().tolist())
 all_sites = ["-- Select Site ID --"] + sorted(df['OCC_SITEID'].unique().tolist())
 region_choices = {"ALL": "All Regions"}
@@ -157,6 +205,41 @@ app_assets = {
     "/assets": ASSETS_DIR,
     "/icons": os.path.join(BASE_DIR, "icons"),
 }
+
+
+def create_orthomosaic_preview(site_id):
+    filename = orthomosaics_by_site.get(site_id)
+    if not filename:
+        return None
+
+    source_path = Path(ORTHOMOSAIC_DIR) / filename
+    if not source_path.is_file():
+        return None
+
+    preview_dir = Path(ORTHOMOSAIC_PREVIEW_DIR)
+    preview_dir.mkdir(exist_ok=True)
+    preview_path = preview_dir / f"{site_id}.png"
+    if preview_path.is_file():
+        return preview_path
+
+    try:
+        Image.MAX_IMAGE_PIXELS = None
+        with Image.open(source_path) as image:
+            image.thumbnail(ORTHOMOSAIC_PREVIEW_SIZE, Image.Resampling.LANCZOS)
+            image.convert("RGB").save(preview_path, format="PNG", optimize=True)
+    except Exception:
+        logging.exception("Could not create orthomosaic preview for %s", site_id)
+        return None
+
+    return preview_path
+
+
+async def orthomosaic_preview(request: Request):
+    site_id = request.path_params["site_id"]
+    preview_path = create_orthomosaic_preview(site_id)
+    if preview_path is None:
+        return PlainTextResponse("Orthomosaic preview is unavailable.", status_code=404)
+    return FileResponse(preview_path, media_type="image/png")
 
 # -----------------------------------------------------------------------------
 # 3. STYLING & LIGHTBOX SCRIPTS
@@ -502,6 +585,27 @@ def server(input, output, session):
             for img in str_photos:
                 gallery_items.append({"url": img["url"], "title": f"{site_id} - STR Photo: {img['name']}"})
 
+            orthomosaic_filename = orthomosaics_by_site.get(site_id)
+            orthomosaic_link = ""
+            if orthomosaic_filename:
+                local_orthomosaic_path = Path(ORTHOMOSAIC_DIR) / orthomosaic_filename
+                if local_orthomosaic_path.is_file():
+                    orthomosaic_url = f"/orthomosaic-preview/{quote(site_id, safe='')}"
+                else:
+                    orthomosaic_url = (
+                        f"{GCS_ORTHO_BASE_URL}/{quote(orthomosaic_filename, safe='')}"
+                    )
+                orthomosaic_link = (
+                    "<div style='margin: 8px 0;'>"
+                    "<a "
+                    f"href='{html.escape(orthomosaic_url, quote=True)}' "
+                    "target='_blank' rel='noopener noreferrer' "
+                    "style='display: inline-block; "
+                    "padding: 6px 10px; background: #3498DB; color: white; "
+                    "border-radius: 4px; text-decoration: none;'>"
+                    "Open Orthomosaic</a></div>"
+                )
+
             popup_html = f"""
             <div class="site-popup" data-gallery="{html.escape(json.dumps(gallery_items), quote=True)}" style="font-family: Arial, sans-serif; font-size: 13px; width: 500px; color: #333333;">
                 <b>Site ID:</b> {site_id}<br>
@@ -512,6 +616,7 @@ def server(input, output, session):
                 <b>CAU:</b> {"Yes" if has_value(row, ["# CAUs Deploy", "CAU Deploy"]) else "No"}<br>
                 <b>BMU:</b> {"Yes" if has_value(row, ["# BMUs Deploy", "BMU Deploy"]) else "No"}<br>
                 <hr style="margin: 6px 0; border: 0; border-top: 1px solid #ccc;">
+                {orthomosaic_link}
             """
 
             gallery_click = (
@@ -568,3 +673,11 @@ def server(input, output, session):
         return ui.HTML(m._repr_html_())
 
 app = App(app_ui, server, static_assets=app_assets)
+app.starlette_app.routes.insert(
+    0,
+    Route(
+        "/orthomosaic-preview/{site_id}",
+        orthomosaic_preview,
+        methods=["GET"],
+    ),
+)

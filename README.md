@@ -51,6 +51,7 @@ View a full-resolution photo:
   - `shiny`
   - `pandas`
   - `folium`
+  - `Pillow`
 
 ## Installing
 1. Clone the repository:
@@ -81,12 +82,19 @@ View a full-resolution photo:
    shiny run app.py
    ```
 
+   Sites with an available orthomosaic show an **Open Orthomosaic** link.
+   When the configured `Z:\OCC_Map_Maker\HARAMP2024_orthomosaics` directory
+   is available, the link opens a browser-compatible PNG preview generated
+   on first request and cached locally. Otherwise, it links to the orthomosaic
+   in Google Cloud Storage.
+
 ## Deployment
 
 When deploying, include `app.py`, `requirements.txt`, the site data CSVs in
-`_data/`, all three generated `bucket_photo_index_<year>.csv` manifests, and the
-logo file under `icons/`. The photo image files remain in Google Cloud Storage;
-they are not downloaded into the deployment bundle.
+`_data/`, the `2024_site_orthomosaic_index.csv` manifest, all three generated
+`bucket_photo_index_<year>.csv` manifests, and the logo file under `icons/`.
+The orthomosaics and photo image files remain in Google Cloud Storage; they
+are not downloaded into the deployment bundle.
 
 ## Resources
 - Related metadata for this ESA project is described here: https://www.fisheries.noaa.gov/inport/item/76360
